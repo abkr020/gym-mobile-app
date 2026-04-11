@@ -13,6 +13,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     const res = await api.login(email, password);
+    if (!res?.success) return;
     login(res);
   };
 
