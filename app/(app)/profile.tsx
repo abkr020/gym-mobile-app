@@ -115,6 +115,7 @@ export default function Profile() {
               keyboardType="number-pad"
               value={pushups}
               onChangeText={setPushups}
+              selectTextOnFocus={true}
             />
 
             <TextInput
@@ -124,6 +125,7 @@ export default function Profile() {
               keyboardType="number-pad"
               value={pullups}
               onChangeText={setPullups}
+              selectTextOnFocus={true}
             />
 
             <View style={styles.modalButtonContainer}>
