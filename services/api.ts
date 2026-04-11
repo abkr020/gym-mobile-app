@@ -1,5 +1,7 @@
 import { showAlert } from "../components/DevAlert";
-const BASE_URL = "http://localhost:3333"; // backend URL
+// const BASE_URL = "http://localhost:3334"; // backend URL
+// const BASE_URL = "http://192.168.1.2:3334"; // backend URL
+const BASE_URL = "http://192.168.1.2:3334"; // backend URL
 const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com"; // backend URL
 
 export const api = {
@@ -65,10 +67,12 @@ export const api = {
 
   addDailyRecord: async (token: string | null, pushups?: number, pullups?: number) => {
     try {
+      console.log("--addDailyRecord post req--");
       const body: any = {};
       if (pushups !== undefined) body.pushups = pushups;
       if (pullups !== undefined) body.pullups = pullups;
-
+      
+      console.log("--addDailyRecord post req body--",body);
       const res = await fetch(`${BASE_URL}/api/daily-records`, {
         method: "POST",
         headers: {
@@ -88,6 +92,8 @@ export const api = {
       showAlert("Success", "Record saved successfully ✅");
       return data;
     } catch (error) {
+      console.log("error=",error,);
+      
       showAlert("Error", "Network error. Please try again.");
       return null;
     }
