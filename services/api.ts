@@ -71,8 +71,8 @@ export const api = {
       const body: any = {};
       if (pushups !== undefined) body.pushups = pushups;
       if (pullups !== undefined) body.pullups = pullups;
-      
-      console.log("--addDailyRecord post req body--",body);
+
+      console.log("--addDailyRecord post req body--", body);
       const res = await fetch(`${BASE_URL}/api/daily-records`, {
         method: "POST",
         headers: {
@@ -92,8 +92,8 @@ export const api = {
       showAlert("Success", "Record saved successfully ✅");
       return data;
     } catch (error) {
-      console.log("error=",error,);
-      
+      console.log("error=", error,);
+
       showAlert("Error", "Network error. Please try again.");
       return null;
     }
@@ -101,7 +101,7 @@ export const api = {
 
   getLatestRecord: async (token: string | null) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/daily-records/latest`, {
+      const res = await fetch(`${BASE_URL}/api/daily-records/today`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -109,13 +109,16 @@ export const api = {
       });
 
       const data = await res.json();
+      console.log("data today", data);
 
       if (!res.ok) {
         // If no record exists, it might return 404, so don't show error
         return null;
       }
-
-      return data;
+      if (!data.data) {
+        return null
+      }
+      return data.data;
     } catch (error) {
       showAlert("Error", "Network error. Please try again.");
       return null;
