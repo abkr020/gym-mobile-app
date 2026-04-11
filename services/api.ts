@@ -1,8 +1,11 @@
 import { showAlert } from "../components/DevAlert";
 // const BASE_URL = "http://localhost:3334"; // backend URL
 // const BASE_URL = "http://192.168.1.2:3334"; // backend URL
-const BASE_URL = "http://192.168.1.2:3334"; // backend URL
-const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com"; // backend URL
+// const BASE_URL = "http://192.168.1.2:3334"; // backend URL
+// const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com"; // backend URL
+
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+const BASE_SSO_AUTH_URL = process.env.EXPO_PUBLIC_SSO_URL;
 
 export const api = {
   login: async (email: string, password: string) => {
