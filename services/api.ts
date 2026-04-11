@@ -24,12 +24,12 @@ export const api = {
   // },
 
 
-  signup: async (email: string, password: string) => {
+  signup: async (name: string, email: string, password: string) => {
     try {
       const res = await fetch(`${BASE_URL}/sso/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await res.json();
@@ -37,24 +37,21 @@ export const api = {
       // ✅ Check HTTP status first
       if (!res.ok) {
         Alert.alert("Error", data?.message || "Signup failed");
-        return data;
+        return null;
       }
 
-      // ✅ Check backend success flag
       if (!data?.success) {
         Alert.alert("Error", data?.message || "Something went wrong");
-        return data;
+        return null;
       }
 
       // ✅ Success case
       Alert.alert("Success", "Account created successfully 🎉");
-
       return data;
-
     } catch (error) {
       // ✅ Network / unexpected error
       Alert.alert("Error", "Network error. Please try again.");
-      throw error;
+      return null;
     }
   },
 };

@@ -8,11 +8,13 @@ import { api } from "../../services/api";
 export default function Signup() {
   const { login } = useAuth();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSignup = async () => {
-    const res = await api.signup(email, password);
+    const res = await api.signup(name, email, password);
+    if (!res?.success) return;
     login(res);
   };
 
@@ -20,6 +22,13 @@ export default function Signup() {
     <View style={styles.container}>
       <Text style={styles.title}>Signup</Text>
 
+      <TextInput
+        style={styles.input}
+        placeholder="Full Name"
+        placeholderTextColor={colors.mutedText}
+        value={name}
+        onChangeText={setName}
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"
