@@ -1,11 +1,11 @@
 import { showAlert } from "../components/DevAlert";
-// const BASE_URL = "http://YOUR_IP:8000"; // backend URL
-const BASE_URL = "https://sso-auth-backend.onrender.com"; // backend URL
+const BASE_URL = "http://localhost:3333"; // backend URL
+const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com"; // backend URL
 
 export const api = {
   login: async (email: string, password: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/sso/api/auth/login`, {
+      const res = await fetch(`${BASE_SSO_AUTH_URL}/sso/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -27,7 +27,7 @@ export const api = {
   },
 
   // signup: async (email: string, password: string) => {
-  //   const res = await fetch(`${BASE_URL}/sso/api/auth/signup`, {
+  //   const res = await fetch(`${BASE_SSO_AUTH_URL}/sso/api/auth/signup`, {
   //     method: "POST",
   //     headers: { "Content-Type": "application/json" },
   //     body: JSON.stringify({ email, password }),
@@ -39,7 +39,7 @@ export const api = {
 
   signup: async (name: string, email: string, password: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/sso/api/auth/signup`, {
+      const res = await fetch(`${BASE_SSO_AUTH_URL}/sso/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -62,4 +62,87 @@ export const api = {
       return null;
     }
   },
-};
+
+  addDailyRecord: async (token: string | null, pushups?: number, pullups?: number) => {
+    try {
+      const body: any = {};
+      if (pushups !== undefined) body.pushups = pushups;
+      if (pullups !== undefined) body.pullups = pullups;
+
+      const res = await fetch(`${BASE_URL}/api/daily-records`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showAlert("Error", data?.message || "Failed to save record");
+        return null;
+      }
+
+      showAlert("Success", "Record saved successfully ✅");
+      return data;
+    } catch (error) {
+      showAlert("Error", "Network error. Please try again.");
+      return null;
+    }
+  },
+
+  getLatestRecord: async (token: string | null) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/daily-records/latest`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // If no record exists, it might return 404, so don't show error
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      showAlert("Error", "Network error. Please try again.");
+      return null;
+    }
+  },
+
+  updateDailyRecord: async (id: string, token: string | null, pushups?: number, pullups?: number) => {
+    try {
+      const body: any = {};
+      if (pushups !== undefined) body.pushups = pushups;
+      if (pullups !== undefined) body.pullups = pullups;
+
+      const res = await fetch(`${BASE_URL}/api/daily-records/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showAlert("Error", data?.message || "Failed to update record");
+        return null;
+      }
+
+      showAlert("Success", "Record updated successfully ✅");
+      return data;
+    } catch (error) {
+      showAlert("Error", "Network error. Please try again.");
+      return null;
+    }
+  },
+}
