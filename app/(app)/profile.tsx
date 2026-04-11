@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../constants/colors";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
@@ -69,7 +70,7 @@ export default function Profile() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
       <Text style={styles.subtitle}>{user?.email}</Text>
 
@@ -144,7 +145,7 @@ export default function Profile() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -171,8 +172,8 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: 24,
-    right: 24,
+    bottom: 50,
+    right: 30,
     width: 60,
     height: 60,
     borderRadius: 30,
