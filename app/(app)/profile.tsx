@@ -1,4 +1,3 @@
-import { showAlert } from "@/components/DevAlert";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -98,6 +97,15 @@ export default function Profile() {
             <Text style={styles.modalTitle}>
               {isEditing ? "Update Daily Record" : "Add Daily Record"}
             </Text>
+
+            <View style={styles.dateContainer}>
+              <Text style={styles.dateText}>
+                {new Date().toLocaleDateString()}
+              </Text>
+              {isEditing && recordId && (
+                <Text style={styles.idText}>ID: {recordId}</Text>
+              )}
+            </View>
 
             <TextInput
               style={styles.input}
@@ -205,6 +213,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 20,
     textAlign: "center",
+  },
+  dateContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  dateText: {
+    color: colors.mutedText,
+    fontSize: 16,
+  },
+  idText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
   },
   input: {
     backgroundColor: colors.background,
