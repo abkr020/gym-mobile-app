@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { colors } from "../../constants/colors";
@@ -15,6 +15,7 @@ export default function Login() {
     const res = await api.login(email, password);
     if (!res?.success) return;
     login(res);
+    router.replace('/profile');
   };
 
   return (

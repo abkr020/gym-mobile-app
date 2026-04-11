@@ -12,6 +12,7 @@ export const api = {
       });
 
       const data = await res.json();
+      console.log("data -", data);
 
       if (!res.ok || !data?.success) {
         showAlert("Error", data?.message || "Login failed");
