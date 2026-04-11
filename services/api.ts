@@ -1,8 +1,10 @@
-const BASE_URL = "http://YOUR_IP:8000"; // backend URL
+import { Alert } from "react-native";
+// const BASE_URL = "http://YOUR_IP:8000"; // backend URL
+const BASE_URL = "https://sso-auth-backend.onrender.com"; // backend URL
 
 export const api = {
   login: async (email: string, password: string) => {
-    const res = await fetch(`${BASE_URL}/login`, {
+    const res = await fetch(`${BASE_URL}/sso/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -11,13 +13,48 @@ export const api = {
     return res.json();
   },
 
-  signup: async (email: string, password: string) => {
-    const res = await fetch(`${BASE_URL}/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+  // signup: async (email: string, password: string) => {
+  //   const res = await fetch(`${BASE_URL}/sso/api/auth/signup`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ email, password }),
+  //   });
 
-    return res.json();
+  //   return res.json();
+  // },
+
+
+  signup: async (email: string, password: string) => {
+    try {
+      const res = await fetch(`${BASE_URL}/sso/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      // ✅ Check HTTP status first
+      if (!res.ok) {
+        Alert.alert("Error", data?.message || "Signup failed");
+        return data;
+      }
+
+      // ✅ Check backend success flag
+      if (!data?.success) {
+        Alert.alert("Error", data?.message || "Something went wrong");
+        return data;
+      }
+
+      // ✅ Success case
+      Alert.alert("Success", "Account created successfully 🎉");
+
+      return data;
+
+    } catch (error) {
+      // ✅ Network / unexpected error
+      Alert.alert("Error", "Network error. Please try again.");
+      throw error;
+    }
   },
 };

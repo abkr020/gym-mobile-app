@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { View, TextInput, Button, Text } from "react-native";
-import { api } from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
 import { Link } from "expo-router";
+import { useState } from "react";
+import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { colors } from "../../constants/colors";
+import { useAuth } from "../../context/AuthContext";
+import { api } from "../../services/api";
 
 export default function Signup() {
   const { login } = useAuth();
@@ -16,15 +17,68 @@ export default function Signup() {
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text>Signup</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Signup</Text>
 
-      <TextInput placeholder="Email" onChangeText={setEmail} />
-      <TextInput placeholder="Password" secureTextEntry onChangeText={setPassword} />
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        placeholderTextColor={colors.mutedText}
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        placeholderTextColor={colors.mutedText}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
 
-      <Button title="Signup" onPress={handleSignup} />
+      <View style={styles.buttonContainer}>
+        <Button color={colors.primary} title="Signup" onPress={handleSignup} />
+      </View>
 
-      <Link href="/login">Go to Login</Link>
+      <Link href="/login" style={styles.link}>
+        Go to Login
+      </Link>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 24,
+    justifyContent: "center",
+  },
+  title: {
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 24,
+  },
+  input: {
+    backgroundColor: colors.card,
+    borderColor: colors.inputBorder,
+    borderWidth: 1,
+    borderRadius: 12,
+    color: colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    marginVertical: 12,
+  },
+  link: {
+    color: colors.primary,
+    marginTop: 18,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+});
