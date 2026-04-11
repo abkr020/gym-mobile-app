@@ -14,7 +14,22 @@
 //   );
 // }
 import { Redirect } from "expo-router";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Index() {
-  return <Redirect href="/login" />;
+  const { user, loading } = useAuth();
+  const [redirectPath, setRedirectPath] = useState<"/profile" | "/login" | null>(null);
+
+  useEffect(() => {
+    if (!loading) {
+      setRedirectPath(user ? "/profile" : "/login");
+    }
+  }, [user, loading]);
+
+  if (loading || !redirectPath) {
+    return null; // or a loading screen
+  }
+
+  return <Redirect href={redirectPath} />;
 }
