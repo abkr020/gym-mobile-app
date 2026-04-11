@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Button, StyleSheet, Text, View } from "react-native";
 import { colors } from "../../constants/colors";
 import { useAuth } from "../../context/AuthContext";
@@ -5,13 +6,18 @@ import { useAuth } from "../../context/AuthContext";
 export default function Profile() {
   const { user, logout } = useAuth();
 
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
       <Text style={styles.subtitle}>{user?.email}</Text>
 
       <View style={styles.buttonContainer}>
-        <Button color={colors.danger} title="Logout" onPress={logout} />
+        <Button color={colors.danger} title="Logout" onPress={handleLogout} />
       </View>
     </View>
   );

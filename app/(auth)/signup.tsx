@@ -14,7 +14,7 @@ export default function Signup() {
 
   const handleSignup = async () => {
     const res = await api.signup(name, email, password);
-    if (!res?.success) return;
+    if (!res?.user) return;
     login(res);
     router.replace('/profile');
   };

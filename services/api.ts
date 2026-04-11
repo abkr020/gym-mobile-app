@@ -14,11 +14,11 @@ export const api = {
       const data = await res.json();
       console.log("data -", data);
 
-      if (!res.ok || !data?.success) {
+      if (!res.ok || !data?.user) {
         showAlert("Error", data?.message || "Login failed");
         return null;
       }
-
+      showAlert("api data come", JSON.stringify(data));
       return data;
     } catch (error) {
       showAlert("Error", "Network error. Please try again.");
@@ -48,13 +48,8 @@ export const api = {
       const data = await res.json();
 
       // ✅ Check HTTP status first
-      if (!res.ok) {
+      if (!res.ok || !data?.user) {
         showAlert("Error", data?.message || "Signup failed");
-        return null;
-      }
-
-      if (!data?.success) {
-        showAlert("Error", data?.message || "Something went wrong");
         return null;
       }
 

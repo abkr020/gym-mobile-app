@@ -13,8 +13,10 @@ export default function Login() {
 
   const handleLogin = async () => {
     const res = await api.login(email, password);
-    if (!res?.success) return;
+    if (!res?.user) return;
     login(res);
+    console.log("here");
+    
     router.replace('/profile');
   };
 
