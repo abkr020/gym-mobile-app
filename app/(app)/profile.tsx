@@ -93,8 +93,16 @@ export default function Profile() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          onPress={() => setModalVisible(false)}
+          activeOpacity={1}
+        >
+          <TouchableOpacity
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={() => {}}
+          >
             <Text style={styles.modalTitle}>
               {isEditing ? "Update Daily Record" : "Add Daily Record"}
             </Text>
@@ -144,8 +152,8 @@ export default function Profile() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
