@@ -4,14 +4,20 @@
 //   return <Stack />;
 // }
 import { Stack } from "expo-router";
+import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import { View, ActivityIndicator } from "react-native";
+import { ThemeProvider, useTheme } from "../context/ThemeContext";
 
 function RootNav() {
   const { user, loading } = useAuth();
+  const { isReady } = useTheme();
 
-  if (loading) {
-    return <ActivityIndicator />;
+  if (loading || !isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
   }
 
   return (
@@ -28,7 +34,9 @@ function RootNav() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <RootNav />
+      <ThemeProvider>
+        <RootNav />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

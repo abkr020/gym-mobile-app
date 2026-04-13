@@ -1,18 +1,17 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  Button,
-  Image,
   Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "../../constants/colors";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Sidebar } from "../../components/Sidebar";
+import { ThemeColors } from "../../constants/colors";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 
 export default function Profile() {
@@ -23,12 +22,8 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
-  const insets = useSafeAreaInsets();
-
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/login');
-  };
+  const { theme } = useTheme();
+  const styles = useMemo(() => createProfileStyles(theme), [theme]);
 
   const openModal = async () => {
     setModalVisible(true);
@@ -130,7 +125,7 @@ export default function Profile() {
             <TextInput
               style={styles.input}
               placeholder="Pushups"
-              placeholderTextColor={colors.mutedText}
+              placeholderTextColor={theme.mutedText}
               keyboardType="number-pad"
               value={pushups}
               onChangeText={setPushups}
@@ -140,7 +135,7 @@ export default function Profile() {
             <TextInput
               style={styles.input}
               placeholder="Pullups"
-              placeholderTextColor={colors.mutedText}
+              placeholderTextColor={theme.mutedText}
               keyboardType="number-pad"
               value={pullups}
               onChangeText={setPullups}
@@ -167,283 +162,147 @@ export default function Profile() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Sidebar */}
-      {sidebarVisible && (
-
-        <TouchableOpacity
-          style={styles.sidebarOverlay}
-          onPress={() => setSidebarVisible(false)}
-          activeOpacity={1}
-        >
-          <TouchableOpacity
-            style={[styles.sidebar, { paddingBottom: Math.max(insets.bottom, 20) }]}
-            activeOpacity={1}
-            onPress={() => { }}
-          >
-            <>
-              {/* TOP SECTION */}
-              <View>
-                <View style={styles.sidebarHeader}>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setSidebarVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.userInfo}>
-                  <Image
-                    source={{ uri: 'https://via.placeholder.com/80x80?text=👤' }}
-                    style={styles.userImage}
-                  />
-                  <Text style={styles.userName}>{user?.name || 'User'}</Text>
-                  <Text style={styles.userEmail}>{user?.email}</Text>
-                </View>
-
-                <View style={styles.sidebarMenu}>
-                  <TouchableOpacity style={styles.menuItem}>
-                    <Text style={styles.menuItemText}>👤 Profile</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.menuItem}>
-                    <Text style={styles.menuItemText}>⚙️ Settings</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* BOTTOM SECTION */}
-              <View style={styles.bottomActions}>
-                <TouchableOpacity style={styles.menuItem}>
-                  <Text style={styles.menuItemText}>Edit Login Info</Text>
-                </TouchableOpacity>
-
-                <View style={styles.buttonContainer}>
-                  <Button
-                    color={colors.danger}
-                    title="Logout"
-                    onPress={handleLogout}
-                  />
-                </View>
-              </View>
-            </>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      )}
+      <Sidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+      />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: 24,
-    // justifyContent: "center",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    // alignItems: "center",
-    // marginBottom: 8,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 20,
-  },
-  subtitle: {
-    color: colors.mutedText,
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  buttonContainer: {
-    width: "100%",
-  },
-  fab: {
-    position: "absolute",
-    bottom: 50,
-    right: 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  fabText: {
-    fontSize: 32,
-    color: colors.text,
-    fontWeight: "bold",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 24,
-    width: "85%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  modalTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  dateContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  dateText: {
-    color: colors.mutedText,
-    fontSize: 16,
-  },
-  idText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderColor: colors.inputBorder,
-    borderWidth: 1,
-    borderRadius: 12,
-    color: colors.text,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  modalButtonContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: colors.inputBorder,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  sidebarOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-    flexDirection: "row",
-  },
-  sidebar: {
-    width: "70%",
-    backgroundColor: colors.card,
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    // paddingBottom: 20,
-    justifyContent: "space-between", // 👈 ADD THIS
-    // paddingBottom: Math.max(insets.bottom, 20), // 👈 respects nav bar
-
-
-  },
-  sidebarHeader: {
-    alignItems: "flex-end",
-    marginBottom: 20,
-  },
-  closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.inputBorder,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: colors.text,
-    fontWeight: "bold",
-  },
-  userInfo: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  userImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
-  },
-  userName: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 5,
-  },
-  userEmail: {
-    color: colors.mutedText,
-    fontSize: 14,
-  },
-  sidebarMenu: {
-    gap: 10,
-  },
-  menuItem: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-  },
-  menuItemText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  bottomActions: {
-    gap: 10,
-  },
-});
+const createProfileStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+      padding: 24,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    title: {
+      color: theme.text,
+      fontSize: 28,
+      fontWeight: "700",
+    },
+    profileIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.card,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    profileIconText: {
+      fontSize: 20,
+    },
+    subtitle: {
+      color: theme.mutedText,
+      fontSize: 16,
+      marginBottom: 24,
+    },
+    buttonContainer: {
+      width: "100%",
+    },
+    fab: {
+      position: "absolute",
+      bottom: 50,
+      right: 30,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: theme.primary,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 8,
+    },
+    fabText: {
+      fontSize: 32,
+      color: theme.text,
+      fontWeight: "bold",
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: theme.overlay,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      padding: 24,
+      width: "85%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 8,
+    },
+    modalTitle: {
+      color: theme.text,
+      fontSize: 20,
+      fontWeight: "700",
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    dateContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    dateText: {
+      color: theme.mutedText,
+      fontSize: 16,
+    },
+    idText: {
+      color: theme.primary,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    input: {
+      backgroundColor: theme.surface,
+      borderColor: theme.inputBorder,
+      borderWidth: 1,
+      borderRadius: 12,
+      color: theme.text,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 16,
+      fontSize: 16,
+    },
+    modalButtonContainer: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 20,
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: theme.inputBorder,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    cancelButtonText: {
+      color: theme.text,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    saveButton: {
+      flex: 1,
+      backgroundColor: theme.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    saveButtonText: {
+      color: theme.text,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+  });
