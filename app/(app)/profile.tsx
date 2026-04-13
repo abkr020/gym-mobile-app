@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../constants/colors";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
@@ -23,6 +23,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     await logout();
@@ -168,49 +169,64 @@ export default function Profile() {
 
       {/* Sidebar */}
       {sidebarVisible && (
+
         <TouchableOpacity
           style={styles.sidebarOverlay}
           onPress={() => setSidebarVisible(false)}
           activeOpacity={1}
         >
           <TouchableOpacity
-            style={styles.sidebar}
+            style={[styles.sidebar, { paddingBottom: Math.max(insets.bottom, 20) }]}
             activeOpacity={1}
             onPress={() => { }}
           >
-            <View style={styles.sidebarHeader}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setSidebarVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
+            <>
+              {/* TOP SECTION */}
+              <View>
+                <View style={styles.sidebarHeader}>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setSidebarVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
 
-            <View style={styles.userInfo}>
-              <Image
-                source={{ uri: 'https://via.placeholder.com/80x80?text=👤' }}
-                style={styles.userImage}
-              />
-              <Text style={styles.userName}>{user?.name || 'User'}</Text>
-              <Text style={styles.userEmail}>{user?.email}</Text>
-            </View>
+                <View style={styles.userInfo}>
+                  <Image
+                    source={{ uri: 'https://via.placeholder.com/80x80?text=👤' }}
+                    style={styles.userImage}
+                  />
+                  <Text style={styles.userName}>{user?.name || 'User'}</Text>
+                  <Text style={styles.userEmail}>{user?.email}</Text>
+                </View>
 
-            <View style={styles.sidebarMenu}>
-              <TouchableOpacity style={styles.menuItem}>
-                <Text style={styles.menuItemText}>👤 Profile</Text>
-              </TouchableOpacity>
+                <View style={styles.sidebarMenu}>
+                  <TouchableOpacity style={styles.menuItem}>
+                    <Text style={styles.menuItemText}>👤 Profile</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem}>
-                <Text style={styles.menuItemText}>⚙️ Settings</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Edit Login Info</Text>
-              </TouchableOpacity>
-              <View style={styles.buttonContainer}>
-                <Button color={colors.danger} title="Logout" onPress={handleLogout} />
+                  <TouchableOpacity style={styles.menuItem}>
+                    <Text style={styles.menuItemText}>⚙️ Settings</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+
+              {/* BOTTOM SECTION */}
+              <View style={styles.bottomActions}>
+                <TouchableOpacity style={styles.menuItem}>
+                  <Text style={styles.menuItemText}>Edit Login Info</Text>
+                </TouchableOpacity>
+
+                <View style={styles.buttonContainer}>
+                  <Button
+                    color={colors.danger}
+                    title="Logout"
+                    onPress={handleLogout}
+                  />
+                </View>
+              </View>
+            </>
           </TouchableOpacity>
         </TouchableOpacity>
       )}
@@ -370,7 +386,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    // paddingBottom: 20,
+    justifyContent: "space-between", // 👈 ADD THIS
+    // paddingBottom: Math.max(insets.bottom, 20), // 👈 respects nav bar
+
+
   },
   sidebarHeader: {
     alignItems: "flex-end",
@@ -422,5 +442,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     fontWeight: "500",
+  },
+  bottomActions: {
+    gap: 10,
   },
 });
