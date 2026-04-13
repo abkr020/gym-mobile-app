@@ -1,5 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   Modal,
@@ -21,6 +23,89 @@ export default function Profile() {
   const [pullups, setPullups] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    // Check initial connectivity
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const wasOnline = isOnline;
+      setIsOnline(state.isConnected ?? true);
+      // If coming back online, sync pending data
+      if (state.isConnected && !wasOnline) {
+        syncPendingData();
+      }
+    });
+
+    // Initial sync check
+    NetInfo.fetch().then(state => {
+      setIsOnline(state.isConnected ?? true);
+    });
+
+    // Check for pending records
+    checkPendingRecords();
+
+    return () => unsubscribe();
+  }, []);
+
+  const checkPendingRecords = async () => {
+    try {
+      const existingData = await AsyncStorage.getItem("pendingRecords");
+      if (existingData) {
+        const pendingRecords = JSON.parse(existingData);
+        setPendingCount(pendingRecords.length);
+      }
+    } catch (error) {
+      console.error("Error checking pending records:", error);
+    }
+  };
+
+  const saveLocally = async (data: any) => {
+    try {
+      const existingData = await AsyncStorage.getItem("pendingRecords");
+      const pendingRecords = existingData ? JSON.parse(existingData) : [];
+      pendingRecords.push({
+        ...data,
+        timestamp: new Date().toISOString(),
+        id: Date.now().toString()
+      });
+      await AsyncStorage.setItem("pendingRecords", JSON.stringify(pendingRecords));
+      setPendingCount(pendingRecords.length);
+    } catch (error) {
+      console.error("Error saving locally:", error);
+    }
+  };
+
+  const syncPendingData = async () => {
+    try {
+      const existingData = await AsyncStorage.getItem("pendingRecords");
+      if (!existingData) return;
+
+      const pendingRecords = JSON.parse(existingData);
+      if (pendingRecords.length === 0) return;
+
+      for (const record of pendingRecords) {
+        try {
+          if (record.isUpdate && record.recordId) {
+            await api.updateDailyRecord(record.recordId, token, record.pushups, record.pullups);
+          } else {
+            await api.addDailyRecord(token, record.pushups, record.pullups);
+          }
+        } catch (error) {
+          console.error("Error syncing record:", error);
+          // Keep failed records for retry
+          continue;
+        }
+      }
+
+      // Clear synced records
+      await AsyncStorage.removeItem("pendingRecords");
+      setPendingCount(0);
+      console.log("Synced pending records successfully");
+    } catch (error) {
+      console.error("Error syncing pending data:", error);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -45,14 +130,30 @@ export default function Profile() {
   };
 
   const handleSaveRecord = async () => {
-
-    // console.log("--handleSaveRecord--");
-    // showAlert("handleSaveRecord", "function start");
-
     const body: any = {};
     if (pushups) body.pushups = parseInt(pushups);
     if (pullups) body.pullups = parseInt(pullups);
 
+    if (!isOnline) {
+      // Save locally when offline
+      await saveLocally({
+        pushups: body.pushups,
+        pullups: body.pullups,
+        isUpdate: isEditing,
+        recordId: recordId
+      });
+
+      setModalVisible(false);
+      setPushups("");
+      setPullups("");
+      setIsEditing(false);
+      setRecordId(null);
+
+      alert("No internet connection. Data saved locally and will sync when online.");
+      return;
+    }
+
+    // Online - save to server
     let res;
     if (isEditing && recordId) {
       res = await api.updateDailyRecord(recordId, token, body.pushups, body.pullups);
@@ -73,6 +174,14 @@ export default function Profile() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
       <Text style={styles.subtitle}>{user?.email}</Text>
+
+      {!isOnline && (
+        <View style={styles.offlineIndicator}>
+          <Text style={styles.offlineText}>
+            ⚠️ Offline - {pendingCount} record{pendingCount !== 1 ? 's' : ''} waiting to sync
+          </Text>
+        </View>
+      )}
 
       <View style={styles.buttonContainer}>
         <Button color={colors.danger} title="Logout" onPress={handleLogout} />
@@ -101,7 +210,7 @@ export default function Profile() {
           <TouchableOpacity
             style={styles.modalContent}
             activeOpacity={1}
-            onPress={() => {}}
+            onPress={() => { }}
           >
             <Text style={styles.modalTitle}>
               {isEditing ? "Update Daily Record" : "Add Daily Record"}
@@ -179,6 +288,19 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: "100%",
+  },
+  offlineIndicator: {
+    backgroundColor: colors.danger,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  offlineText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   fab: {
     position: "absolute",
