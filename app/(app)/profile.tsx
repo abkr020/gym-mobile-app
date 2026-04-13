@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   Button,
+  Image,
   Modal,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ export default function Profile() {
   const [pullups, setPullups] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [recordId, setRecordId] = useState<string | null>(null);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -71,12 +73,20 @@ export default function Profile() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Welcome</Text>
+      {/* Header with Profile Icon */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Welcome</Text>
+        <TouchableOpacity
+          style={styles.profileIcon}
+          onPress={() => setSidebarVisible(true)}
+        >
+          <Text style={styles.profileIconText}>👤</Text>
+        </TouchableOpacity>
+      </View>
+
       <Text style={styles.subtitle}>{user?.email}</Text>
 
-      <View style={styles.buttonContainer}>
-        <Button color={colors.danger} title="Logout" onPress={handleLogout} />
-      </View>
+
 
       {/* Floating Action Button */}
       <TouchableOpacity
@@ -101,7 +111,7 @@ export default function Profile() {
           <TouchableOpacity
             style={styles.modalContent}
             activeOpacity={1}
-            onPress={() => {}}
+            onPress={() => { }}
           >
             <Text style={styles.modalTitle}>
               {isEditing ? "Update Daily Record" : "Add Daily Record"}
@@ -155,6 +165,55 @@ export default function Profile() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Sidebar */}
+      {sidebarVisible && (
+        <TouchableOpacity
+          style={styles.sidebarOverlay}
+          onPress={() => setSidebarVisible(false)}
+          activeOpacity={1}
+        >
+          <TouchableOpacity
+            style={styles.sidebar}
+            activeOpacity={1}
+            onPress={() => { }}
+          >
+            <View style={styles.sidebarHeader}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setSidebarVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.userInfo}>
+              <Image
+                source={{ uri: 'https://via.placeholder.com/80x80?text=👤' }}
+                style={styles.userImage}
+              />
+              <Text style={styles.userName}>{user?.name || 'User'}</Text>
+              <Text style={styles.userEmail}>{user?.email}</Text>
+            </View>
+
+            <View style={styles.sidebarMenu}>
+              <TouchableOpacity style={styles.menuItem}>
+                <Text style={styles.menuItemText}>👤 Profile</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.menuItem}>
+                <Text style={styles.menuItemText}>⚙️ Settings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem}>
+                <Text style={styles.menuItemText}>Edit Login Info</Text>
+              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <Button color={colors.danger} title="Logout" onPress={handleLogout} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -164,13 +223,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: 24,
-    justifyContent: "center",
+    // justifyContent: "center",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    // alignItems: "center",
+    // marginBottom: 8,
   },
   title: {
     color: colors.text,
     fontSize: 28,
     fontWeight: "700",
-    marginBottom: 8,
+  },
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileIconText: {
+    fontSize: 20,
   },
   subtitle: {
     color: colors.mutedText,
@@ -279,5 +354,73 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     fontWeight: "600",
+  },
+  sidebarOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+    flexDirection: "row",
+  },
+  sidebar: {
+    width: "70%",
+    backgroundColor: colors.card,
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  sidebarHeader: {
+    alignItems: "flex-end",
+    marginBottom: 20,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.inputBorder,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: "bold",
+  },
+  userInfo: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  userImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 10,
+  },
+  userName: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 5,
+  },
+  userEmail: {
+    color: colors.mutedText,
+    fontSize: 14,
+  },
+  sidebarMenu: {
+    gap: 10,
+  },
+  menuItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+  },
+  menuItemText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
