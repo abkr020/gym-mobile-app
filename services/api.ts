@@ -1,15 +1,23 @@
+import Constants from "expo-constants";
 import { showAlert } from "../components/DevAlert";
+
 // const BASE_URL = "http://localhost:3334"; // backend URL
 // const BASE_URL = "http://192.168.1.2:3334"; // backend URL
 // const BASE_URL = "http://192.168.1.2:3334"; // backend URL
 // const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com"; // backend URL
 
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
-const BASE_SSO_AUTH_URL = process.env.EXPO_PUBLIC_SSO_URL;
+// const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+// const BASE_SSO_AUTH_URL = process.env.EXPO_PUBLIC_SSO_URL;
+
+// const BASE_SSO_AUTH_URL = Constants.expoConfig?.extra?.SSO_URL;
+const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com";
+// const BASE_URL = Constants.expoConfig?.extra?.BASE_URL;
+const BASE_URL = "http://192.168.1.2:3334";
 
 export const api = {
   login: async (email: string, password: string) => {
     try {
+      showAlert("SSO_URL", BASE_SSO_AUTH_URL || "undefined");
       const res = await fetch(`${BASE_SSO_AUTH_URL}/sso/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +79,8 @@ export const api = {
   addDailyRecord: async (token: string | null, pushups?: number, pullups?: number) => {
     try {
       console.log("--addDailyRecord post req--");
+      showAlert("BASE_URL", BASE_URL || "undefined");
+
       const body: any = {};
       if (pushups !== undefined) body.pushups = pushups;
       if (pullups !== undefined) body.pullups = pullups;
