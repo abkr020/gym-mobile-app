@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import { router } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -78,6 +79,7 @@ export function Sidebar({
                         <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.background }]} onPress={handleLogout}>
                             <Text style={[styles.menuItemText, { color: theme.text }]}>Logout</Text>
                         </TouchableOpacity>
+                        <Text style={[styles.versionText, { color: theme.mutedText }]}>v{Constants.expoConfig?.version + " - auto" || "1.0.1 - manual"}</Text>
                     </View>
                 </View>
             </TouchableOpacity>
@@ -170,5 +172,10 @@ const styles = StyleSheet.create({
           marginTop: "auto",
 
 
+    },
+    versionText: {
+        fontSize: 12,
+        textAlign: "center",
+        marginTop: 10,
     },
 });
