@@ -6,7 +6,8 @@ import {
     Text,
     View,
 } from "react-native";
-import Svg, { Circle, Line, Polyline } from "react-native-svg";
+// import Svg, { Circle, Line, Polyline } from "react-native-svg";
+import Svg, { Circle, Line, Polyline, Text as SvgText } from "react-native-svg";
 import { ThemeColors } from "../constants/colors";
 
 interface DailyRecord {
@@ -215,41 +216,72 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
                             ))}
 
                             {/* Data points */}
+                            {/* Data points + values */}
                             {chartData.exercises.map((exercise) =>
                                 chartData.data.map((point, i) => {
-                                    const x = padding.left + (i / (chartData.data.length - 1 || 1)) * innerWidth;
-                                    const yValue = typeof point[exercise] === "number" ? point[exercise] : 0;
-                                    const y = padding.top + innerHeight - (yValue / maxValue) * innerHeight;
+                                    const x =
+                                        padding.left +
+                                        (i / (chartData.data.length - 1 || 1)) * innerWidth;
+
+                                    const yValue =
+                                        typeof point[exercise] === "number" ? point[exercise] : 0;
+
+                                    const y =
+                                        padding.top + innerHeight - (yValue / maxValue) * innerHeight;
+
                                     return (
-                                        <Circle
-                                            key={`${exercise}-${i}`}
-                                            cx={x}
-                                            cy={y}
-                                            r="3"
-                                            fill={(EXERCISE_COLORS as Record<string, string>)[exercise] || "#999"}
-                                        />
+                                        <React.Fragment key={`${exercise}-${i}`}>
+                                            {/* Dot */}
+                                            <Circle
+                                                cx={x}
+                                                cy={y}
+                                                r="3"
+                                                fill={
+                                                    (EXERCISE_COLORS as Record<string, string>)[exercise] || "#999"
+                                                }
+                                            />
+
+                                            {/* Value */}
+                                            <SvgText
+                                                x={x}
+                                                y={y - 8} // slightly above dot
+                                                fontSize="10"
+                                                fill={theme.text}
+                                                textAnchor="middle"
+                                            >
+                                                {yValue}
+                                            </SvgText>
+                                        </React.Fragment>
                                     );
                                 })
                             )}
                         </Svg>
 
                         {/* X-axis labels */}
-                        <View style={styles.xAxisContainer}>
-                            {chartData.data.map((point, i) => (
-                                <Text
-                                    key={i}
-                                    style={[
-                                        styles.xAxisLabel,
-                                        {
-                                            color: theme.mutedText,
-                                            width: innerWidth / (chartData.data.length - 1 || 1),
-                                            marginLeft: i === 0 ? padding.left : 0,
-                                        },
-                                    ]}
-                                >
-                                    {point.date}
-                                </Text>
-                            ))}
+                        {/* X-axis labels */}
+                        <View style={{ position: "absolute", top: chartHeight }}>
+                            {chartData.data.map((point, i) => {
+                                const x =
+                                    padding.left +
+                                    (i / (chartData.data.length - 1 || 1)) * innerWidth;
+
+                                return (
+                                    <Text
+                                        key={i}
+                                        style={[
+                                            styles.xAxisLabel,
+                                            {
+                                                position: "absolute",
+                                                left: x - 20, // center align
+                                                width: 40,
+                                                color: theme.mutedText,
+                                            },
+                                        ]}
+                                    >
+                                        {point.date}
+                                    </Text>
+                                );
+                            })}
                         </View>
                     </View>
                 </ScrollView>
