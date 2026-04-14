@@ -29,7 +29,10 @@ export default function Profile() {
     <SafeAreaView style={styles.container}>
       {/* Header with Profile Icon */}
       <View style={styles.header}>
-        <Text style={styles.title}>Welcome</Text>
+        <View>
+          <Text style={styles.title}>Welcome</Text>
+          <Text style={styles.subtitle}>{user?.email}</Text>
+        </View>
         <TouchableOpacity
           style={styles.profileIcon}
           onPress={() => setSidebarVisible(true)}
@@ -38,7 +41,7 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.subtitle}>{user?.email}</Text>
+
 
 
 
