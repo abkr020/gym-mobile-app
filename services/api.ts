@@ -17,10 +17,16 @@ const BASE_URL = "http://192.168.1.2:3334";
 export const api = {
   wakeServer: async () => {
     try {
-      await fetch(`${BASE_URL}/`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      await Promise.all([
+        fetch(`${BASE_URL}/`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }),
+        fetch(`${BASE_SSO_AUTH_URL}/`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }),
+      ]);
     } catch (error) {
       console.log("wakeServer failed:", error);
     }
