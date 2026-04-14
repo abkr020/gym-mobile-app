@@ -194,7 +194,8 @@ export const api = {
 
   getAllRecords: async (token: string | null, days: number = 30) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/daily-records?days=${days}`, {
+      showAlert("dev", "getAllRecords")
+      const res = await fetch(`${BASE_URL}/api/daily-records/all?days=${days}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -202,13 +203,34 @@ export const api = {
       });
 
       const data = await res.json();
-
+      showAlert("dev", JSON.stringify(data))
       if (!res.ok) {
         return [];
       }
+      console.log("data", data);
 
-      return data.data || [];
+      const raw = data.data;
+
+      const normalized = Array.isArray(raw)
+        ? raw.map((item: any) => ({
+          id: item.id.toString(),
+          date: item.createdAt, // ✅ normalize
+          ...item,
+        }))
+        : raw
+          ? [
+            {
+              id: raw.id.toString(),
+              date: raw.createdAt,
+              ...raw,
+            },
+          ]
+          : [];
+
+      return normalized;
+      // return data.data || [];
     } catch (error) {
+      showAlert("dev error", JSON.stringify(error))
       console.log("getAllRecords error:", error);
       return [];
     }
