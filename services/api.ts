@@ -17,7 +17,15 @@ const BASE_URL = "http://192.168.1.2:3334";
 export const api = {
   wakeServer: async () => {
     try {
-      await Promise.all([
+      // promise.all([])
+      // if one fail 
+      // Result: goes to catch
+      // but in the promise.allSettled
+      // [
+      //   { status: "fulfilled", value: Response },
+      //   { status: "rejected", reason: Error }
+      // ]
+      await Promise.allSettled([
         fetch(`${BASE_URL}/`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
