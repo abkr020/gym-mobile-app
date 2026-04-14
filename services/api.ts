@@ -1,4 +1,3 @@
-import Constants from "expo-constants";
 import { showAlert } from "../components/DevAlert";
 
 // const BASE_URL = "http://localhost:3334"; // backend URL
@@ -190,6 +189,28 @@ export const api = {
     } catch (error) {
       showAlert("Error", "Network error. Please try again.");
       return null;
+    }
+  },
+
+  getAllRecords: async (token: string | null, days: number = 30) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/daily-records?days=${days}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return [];
+      }
+
+      return data.data || [];
+    } catch (error) {
+      console.log("getAllRecords error:", error);
+      return [];
     }
   },
 }

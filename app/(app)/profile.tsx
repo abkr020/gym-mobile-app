@@ -1,49 +1,79 @@
-import { useMemo, useState } from "react";
+import { DailyRecordForm } from "@/components/DailyRecordForm";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
+  ActivityIndicator,
+  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { DailyRecordsChart } from "../../components/DailyRecordsChart";
 import { Sidebar } from "../../components/Sidebar";
 import { ThemeColors } from "../../constants/colors";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { DailyRecordForm } from "@/components/DailyRecordForm";
+import { api } from "../../services/api";
 
 export default function Profile() {
   const { user, token, logout } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { theme } = useTheme();
   const styles = useMemo(() => createProfileStyles(theme), [theme]);
+
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
+  const loadRecords = async () => {
+    setLoading(true);
+    const data = await api.getAllRecords(token, 30);
+    setRecords(data);
+    setLoading(false);
+  };
 
   const openModal = () => {
     setModalVisible(true);
   };
 
+  const handleFormClose = async () => {
+    setModalVisible(false);
+    await loadRecords();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Profile Icon */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Welcome</Text>
-          <Text style={styles.subtitle}>{user?.email}</Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header with Profile Icon */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Welcome</Text>
+            <Text style={styles.subtitle}>{user?.email}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.profileIcon}
+            onPress={() => setSidebarVisible(true)}
+          >
+            <Text style={styles.profileIconText}>👤</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.profileIcon}
-          onPress={() => setSidebarVisible(true)}
-        >
-          <Text style={styles.profileIconText}>👤</Text>
-        </TouchableOpacity>
-      </View>
 
-
-
-
+        {/* Daily Records Chart */}
+        {loading ? (
+          <View style={[styles.loadingContainer, { backgroundColor: theme.card }]}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.mutedText }]}>
+              Loading your records...
+            </Text>
+          </View>
+        ) : (
+          <DailyRecordsChart records={records} theme={theme} />
+        )}
+      </ScrollView>
 
       {/* Floating Action Button */}
       <TouchableOpacity
@@ -56,7 +86,7 @@ export default function Profile() {
       {/* Modal for adding daily record */}
       <DailyRecordForm
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={handleFormClose}
       />
 
       <Sidebar
@@ -77,6 +107,7 @@ const createProfileStyles = (theme: ThemeColors) =>
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
+      marginBottom: 20,
     },
     title: {
       color: theme.text,
@@ -97,14 +128,24 @@ const createProfileStyles = (theme: ThemeColors) =>
     subtitle: {
       color: theme.mutedText,
       fontSize: 16,
-      marginBottom: 24,
+      marginTop: 4,
     },
-    buttonContainer: {
-      width: "100%",
+    loadingContainer: {
+      borderRadius: 12,
+      padding: 32,
+      marginVertical: 12,
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: 250,
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      fontWeight: "500",
     },
     fab: {
       position: "absolute",
-      bottom: 50,
+      bottom: 30,
       right: 30,
       width: 60,
       height: 60,
@@ -123,5 +164,4 @@ const createProfileStyles = (theme: ThemeColors) =>
       color: theme.text,
       fontWeight: "bold",
     },
-
   });
