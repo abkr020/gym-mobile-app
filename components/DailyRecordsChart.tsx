@@ -90,7 +90,15 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
         chartData.data.length * 60
     );
     const chartHeight = 200;
-    const padding = { left: 40, right: 10, top: 10, bottom: 40 };
+    const LABEL_HEIGHT = 16;   // space for top values
+    const LABEL_WIDTH = 24;    // horizontal safety
+    // const padding = { left: 40, right: 10, top: 10, bottom: 40 };
+    const padding = {
+        left: 40 + LABEL_WIDTH,
+        right: 10 + LABEL_WIDTH,
+        top: 10 + LABEL_HEIGHT,
+        bottom: 40 + LABEL_HEIGHT,
+    };
 
     const innerHeight = chartHeight - padding.top - padding.bottom;
     const innerWidth = chartWidth - padding.left - padding.right;
