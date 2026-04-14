@@ -15,6 +15,17 @@ const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com";
 const BASE_URL = "http://192.168.1.2:3334";
 
 export const api = {
+  wakeServer: async () => {
+    try {
+      await fetch(`${BASE_URL}/`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.log("wakeServer failed:", error);
+    }
+  },
+
   login: async (email: string, password: string) => {
     try {
       showAlert("SSO_URL", BASE_SSO_AUTH_URL || "undefined");
