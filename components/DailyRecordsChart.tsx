@@ -1,4 +1,3 @@
-import * as shape from "d3-shape";
 import React, { useMemo } from "react";
 import {
     Dimensions,
@@ -7,8 +6,7 @@ import {
     Text,
     View,
 } from "react-native";
-// @ts-ignore
-import { LineChart } from "react-native-svg-charts";
+import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import { ThemeColors } from "../constants/colors";
 
 interface DailyRecord {
@@ -51,12 +49,10 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
       return { data: [], exercises: [] };
     }
 
-    // Sort records by date
     const sortedRecords = [...records].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    // Extract all exercise types
     const exercises = new Set<string>();
     sortedRecords.forEach((record) => {
       Object.keys(record).forEach((key) => {
@@ -66,7 +62,6 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
       });
     });
 
-    // Build chart data
     const exercisesArray = Array.from(exercises).sort();
     const chartDataArray: ChartDataPoint[] = sortedRecords.map((record) => {
       const dataPoint: ChartDataPoint = {
@@ -89,6 +84,39 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
     };
   }, [records]);
 
+  const chartWidth = Math.max(
+    Dimensions.get("window").width - 48,
+    chartData.data.length * 60
+  );
+  const chartHeight = 200;
+  const padding = { left: 40, right: 10, top: 10, bottom: 40 };
+  
+  const innerHeight = chartHeight - padding.top - padding.bottom;
+  const innerWidth = chartWidth - padding.left - padding.right;
+
+  let maxValue = 0;
+  chartData.data.forEach((point) => {
+    Object.keys(point).forEach((key) => {
+      if (key !== "date") {
+        const val = typeof point[key] === "number" ? point[key] : 0;
+        if (val > maxValue) maxValue = val;
+      }
+    });
+  });
+  maxValue = maxValue || 10;
+
+  const getPoints = (exercise: string) => {
+    if (chartData.data.length === 0) return "";
+    return chartData.data
+      .map((point, i) => {
+        const x = padding.left + (i / (chartData.data.length - 1 || 1)) * innerWidth;
+        const yValue = typeof point[exercise] === "number" ? point[exercise] : 0;
+        const y = padding.top + innerHeight - (yValue / maxValue) * innerHeight;
+        return `${x},${y}`;
+      })
+      .join(" ");
+  };
+
   if (chartData.data.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.card }]}>
@@ -98,11 +126,6 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
       </View>
     );
   }
-
-  const chartWidth = Math.max(
-    Dimensions.get("window").width - 48,
-    chartData.data.length * 60
-  );
 
   return (
     <View>
@@ -151,29 +174,64 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
           horizontal
           showsHorizontalScrollIndicator={true}
           scrollEventThrottle={16}
-          style={styles.scrollView}
         >
-          <View style={{ width: chartWidth }}>
-            <LineChart
-              style={styles.chart}
-              data={chartData.data.map((_, i) => i)}
-              svg={{ strokeWidth: 2, stroke: "#2563EB" }}
-              contentInset={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              curve={shape.curveMonotoneX}
-            >
-              {chartData.exercises.map((exercise) => (
-                <LineChart.Line
-                  key={exercise}
-                  data={chartData.data}
-                  yAccessor={({ item }: { item: any }) => item[exercise]}
-                  svg={{
-                    stroke:
-                      (EXERCISE_COLORS as Record<string, string>)[exercise] || "#999",
-                    strokeWidth: 2,
-                  }}
+          <View style={{ width: chartWidth, height: chartHeight + 50 }}>
+            <Svg width={chartWidth} height={chartHeight}>
+              {/* Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((i) => (
+                <Line
+                  key={`grid-${i}`}
+                  x1={padding.left}
+                  y1={padding.top + i * innerHeight}
+                  x2={chartWidth - padding.right}
+                  y2={padding.top + i * innerHeight}
+                  stroke={theme.inputBorder}
+                  strokeWidth="1"
+                  strokeOpacity="0.3"
                 />
               ))}
-            </LineChart>
+
+              {/* Y-axis */}
+              <Line
+                x1={padding.left}
+                y1={padding.top}
+                x2={padding.left}
+                y2={padding.top + innerHeight}
+                stroke={theme.mutedText}
+                strokeWidth="1"
+              />
+
+              {/* Exercise lines */}
+              {chartData.exercises.map((exercise) => (
+                <Polyline
+                  key={exercise}
+                  points={getPoints(exercise)}
+                  fill="none"
+                  stroke={(EXERCISE_COLORS as Record<string, string>)[exercise] || "#999"}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
+
+              {/* Data points */}
+              {chartData.exercises.map((exercise) =>
+                chartData.data.map((point, i) => {
+                  const x = padding.left + (i / (chartData.data.length - 1 || 1)) * innerWidth;
+                  const yValue = typeof point[exercise] === "number" ? point[exercise] : 0;
+                  const y = padding.top + innerHeight - (yValue / maxValue) * innerHeight;
+                  return (
+                    <Circle
+                      key={`${exercise}-${i}`}
+                      cx={x}
+                      cy={y}
+                      r="3"
+                      fill={(EXERCISE_COLORS as Record<string, string>)[exercise] || "#999"}
+                    />
+                  );
+                })
+              )}
+            </Svg>
 
             {/* X-axis labels */}
             <View style={styles.xAxisContainer}>
@@ -184,7 +242,8 @@ export function DailyRecordsChart({ records, theme }: DailyRecordsChartProps) {
                     styles.xAxisLabel,
                     {
                       color: theme.mutedText,
-                      width: 60,
+                      width: innerWidth / (chartData.data.length - 1 || 1),
+                      marginLeft: i === 0 ? padding.left : 0,
                     },
                   ]}
                 >
@@ -242,12 +301,6 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     borderWidth: 1,
     minHeight: 250,
-  },
-  scrollView: {
-    width: "100%",
-  },
-  chart: {
-    height: 200,
   },
   xAxisContainer: {
     flexDirection: "row",
