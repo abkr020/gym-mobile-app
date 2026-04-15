@@ -11,12 +11,15 @@ import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import { api } from "../services/api";
 
 function RootNav() {
-  const { user, loading } = useAuth();
+  const { user, token, loading } = useAuth();
   const { isReady } = useTheme();
 
   useEffect(() => {
     api.wakeServer();
-  }, []);
+    if (token) {
+      api.syncPendingRecords(token);
+    }
+  }, [token]);
 
   if (loading || !isReady) {
     return (

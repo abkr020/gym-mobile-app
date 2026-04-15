@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showAlert } from "../components/DevAlert";
 
 // const BASE_URL = "http://localhost:3334"; // backend URL
@@ -11,19 +12,65 @@ import { showAlert } from "../components/DevAlert";
 // const BASE_SSO_AUTH_URL = Constants.expoConfig?.extra?.SSO_URL;
 const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com";
 // const BASE_URL = Constants.expoConfig?.extra?.BASE_URL;
-const BASE_URL = "http://192.168.1.2:3334";
+const BASE_URL = "http://192.168.1.14:3334";
+const PENDING_RECORDS_KEY = "pendingDailyRecords";
+const CACHED_RECORDS_KEY = "cachedDailyRecords";
+
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 8000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+};
+
+const isServerReachable = async () => {
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }, 8000);
+
+    return response.ok || response.status === 404 || response.status === 500;
+  } catch (error) {
+    return false;
+  }
+};
+
+const normalizeRecords = (raw: any[]) =>
+  raw.map((item: any) => ({
+    id: item.id?.toString() || `${Date.now()}`,
+    date: item.createdAt || item.date || new Date().toISOString(),
+    ...item,
+  }));
+
+const loadPendingRecords = async () => {
+  const raw = await AsyncStorage.getItem(PENDING_RECORDS_KEY);
+  return raw ? JSON.parse(raw) : [];
+};
+
+const savePendingRecords = async (records: any[]) => {
+  await AsyncStorage.setItem(PENDING_RECORDS_KEY, JSON.stringify(records));
+};
+
+const loadCachedRecords = async () => {
+  const raw = await AsyncStorage.getItem(CACHED_RECORDS_KEY);
+  return raw ? JSON.parse(raw) : [];
+};
+
+const saveCachedRecords = async (records: any[]) => {
+  await AsyncStorage.setItem(CACHED_RECORDS_KEY, JSON.stringify(records));
+};
+
+const createLocalId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const isLocalId = (id: string) => id.startsWith("local-");
 
 export const api = {
   wakeServer: async () => {
     try {
-      // promise.all([])
-      // if one fail 
-      // Result: goes to catch
-      // but in the promise.allSettled
-      // [
-      //   { status: "fulfilled", value: Response },
-      //   { status: "rejected", reason: Error }
-      // ]
       await Promise.allSettled([
         fetch(`${BASE_URL}/`, {
           method: "GET",
@@ -37,6 +84,71 @@ export const api = {
     } catch (error) {
       console.log("wakeServer failed:", error);
     }
+  },
+
+  syncPendingRecords: async (token: string | null) => {
+    if (!token) return [];
+
+    const pendingRecords = await loadPendingRecords();
+    if (pendingRecords.length === 0) return [];
+    if (!(await isServerReachable())) return pendingRecords;
+
+    const successfullySynced: string[] = [];
+
+    for (const record of pendingRecords) {
+      try {
+        let response: Response | null = null;
+        if (record.action === "create") {
+          response = await fetch(`${BASE_URL}/api/daily-records`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(record.body),
+          });
+        } else if (record.action === "update" && record.remoteId) {
+          response = await fetch(`${BASE_URL}/api/daily-records/${record.remoteId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(record.body),
+          });
+        } else if (record.action === "update") {
+          response = await fetch(`${BASE_URL}/api/daily-records`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(record.body),
+          });
+        }
+
+        if (response && response.ok) {
+          successfullySynced.push(record.localId);
+        }
+      } catch (error) {
+        console.log("sync record failed", record.localId, error);
+      }
+    }
+
+    if (successfullySynced.length > 0) {
+      const remaining = pendingRecords.filter(
+        (record: any) => !successfullySynced.includes(record.localId)
+      );
+      await savePendingRecords(remaining);
+
+      try {
+        await api.getAllRecords(token, 30);
+      } catch (error) {
+        console.log("cache refresh after sync failed", error);
+      }
+    }
+
+    return successfullySynced;
   },
 
   login: async (email: string, password: string) => {
@@ -101,15 +213,32 @@ export const api = {
   },
 
   addDailyRecord: async (token: string | null, pushups?: number, pullups?: number) => {
+    console.log("--addDailyRecord post req--");
+    showAlert("BASE_URL", BASE_URL || "undefined");
+
+    const body: any = {};
+    if (pushups !== undefined) body.pushups = pushups;
+    if (pullups !== undefined) body.pullups = pullups;
+
+    console.log("--addDailyRecord post req body--", body);
+    const pendingRecord = {
+      localId: createLocalId(),
+      date: new Date().toISOString(),
+      action: "create",
+      body,
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      console.log("--addDailyRecord post req--");
-      showAlert("BASE_URL", BASE_URL || "undefined");
+      if (!(await isServerReachable())) {
+        const existing = await loadPendingRecords();
+        await savePendingRecords([...existing, pendingRecord]);
+        const cached = await loadCachedRecords();
+        await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
+        showAlert("Offline", "Record saved locally and will sync once online.");
+        return pendingRecord;
+      }
 
-      const body: any = {};
-      if (pushups !== undefined) body.pushups = pushups;
-      if (pullups !== undefined) body.pullups = pullups;
-
-      console.log("--addDailyRecord post req body--", body);
       const res = await fetch(`${BASE_URL}/api/daily-records`, {
         method: "POST",
         headers: {
@@ -120,24 +249,43 @@ export const api = {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
-        showAlert("Error", data?.message || "Failed to save record");
-        return null;
+        const existing = await loadPendingRecords();
+        await savePendingRecords([...existing, pendingRecord]);
+        const cached = await loadCachedRecords();
+        await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
+        showAlert("Offline", data?.message || "Could not save to server, record stored locally.");
+        return pendingRecord;
       }
 
+      const serverRecord = {
+        id: data?.data?.id?.toString() || data?.id?.toString() || createLocalId(),
+        date: data?.data?.createdAt || data?.createdAt || pendingRecord.date,
+        ...body,
+      };
+      const cached = await loadCachedRecords();
+      await saveCachedRecords([...cached, serverRecord]);
       showAlert("Success", "Record saved successfully ✅");
-      return data;
+      return serverRecord;
     } catch (error) {
-      console.log("error=", error,);
-
-      showAlert("Error", "Network error. Please try again.");
-      return null;
+      const existing = await loadPendingRecords();
+      await savePendingRecords([...existing, pendingRecord]);
+      const cached = await loadCachedRecords();
+      await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
+      showAlert("Offline", "Network error. Record saved locally and will sync later.");
+      return pendingRecord;
     }
   },
 
   getLatestRecord: async (token: string | null) => {
     try {
+      if (!(await isServerReachable())) {
+        const cached = await loadCachedRecords();
+        if (!cached.length) return null;
+        const latest = cached[cached.length - 1];
+        return latest;
+      }
+
       const res = await fetch(`${BASE_URL}/api/daily-records/today`, {
         method: "GET",
         headers: {
@@ -146,27 +294,71 @@ export const api = {
       });
 
       const data = await res.json();
-      console.log("data today", data);
-
       if (!res.ok) {
-        // If no record exists, it might return 404, so don't show error
         return null;
       }
       if (!data.data) {
-        return null
+        return null;
       }
       return data.data;
     } catch (error) {
-      showAlert("Error", "Network error. Please try again.");
-      return null;
+      const cached = await loadCachedRecords();
+      if (!cached.length) return null;
+      return cached[cached.length - 1];
     }
   },
 
   updateDailyRecord: async (id: string, token: string | null, pushups?: number, pullups?: number) => {
+    const body: any = {};
+    if (pushups !== undefined) body.pushups = pushups;
+    if (pullups !== undefined) body.pullups = pullups;
+
+    if (isLocalId(id)) {
+      const existingPending = await loadPendingRecords();
+      const createIndex = existingPending.findIndex(
+        (record: any) => record.localId === id && record.action === "create"
+      );
+
+      if (createIndex >= 0) {
+        existingPending[createIndex] = {
+          ...existingPending[createIndex],
+          body,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        await savePendingRecords(existingPending);
+
+        const cached = await loadCachedRecords();
+        const updatedCache = cached.map((record: any) =>
+          record.id === id ? { ...record, ...body, date: new Date().toISOString() } : record
+        );
+        await saveCachedRecords(updatedCache);
+        showAlert("Offline", "Update saved locally and will sync once online.");
+        return existingPending[createIndex];
+      }
+    }
+
+    const pendingRecord = {
+      localId: createLocalId(),
+      date: new Date().toISOString(),
+      action: "update",
+      remoteId: id,
+      body,
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      const body: any = {};
-      if (pushups !== undefined) body.pushups = pushups;
-      if (pullups !== undefined) body.pullups = pullups;
+      if (!(await isServerReachable())) {
+        const existing = await loadPendingRecords();
+        await savePendingRecords([...existing, pendingRecord]);
+        const cached = await loadCachedRecords();
+        const updatedCache = cached.map((record: any) =>
+          record.id === id ? { ...record, ...body } : record
+        );
+        await saveCachedRecords(updatedCache);
+        showAlert("Offline", "Update saved locally and will sync once online.");
+        return pendingRecord;
+      }
 
       const res = await fetch(`${BASE_URL}/api/daily-records/${id}`, {
         method: "PUT",
@@ -178,23 +370,45 @@ export const api = {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
-        showAlert("Error", data?.message || "Failed to update record");
-        return null;
+        const existing = await loadPendingRecords();
+        await savePendingRecords([...existing, pendingRecord]);
+        const cached = await loadCachedRecords();
+        const updatedCache = cached.map((record: any) =>
+          record.id === id ? { ...record, ...body } : record
+        );
+        await saveCachedRecords(updatedCache);
+        showAlert("Offline", data?.message || "Could not update server, update stored locally.");
+        return pendingRecord;
       }
 
+      const cached = await loadCachedRecords();
+      const updatedCache = cached.map((record: any) =>
+        record.id === id ? { ...record, ...body } : record
+      );
+      await saveCachedRecords(updatedCache);
       showAlert("Success", "Record updated successfully ✅");
       return data;
     } catch (error) {
-      showAlert("Error", "Network error. Please try again.");
-      return null;
+      const existing = await loadPendingRecords();
+      await savePendingRecords([...existing, pendingRecord]);
+      const cached = await loadCachedRecords();
+      const updatedCache = cached.map((record: any) =>
+        record.id === id ? { ...record, ...body } : record
+      );
+      await saveCachedRecords(updatedCache);
+      showAlert("Offline", "Network error. Update saved locally and will sync later.");
+      return pendingRecord;
     }
   },
 
   getAllRecords: async (token: string | null, days: number = 30) => {
+    const cached = await loadCachedRecords();
+    if (!(await isServerReachable())) {
+      return cached;
+    }
+
     try {
-      showAlert("dev", "getAllRecords")
       const res = await fetch(`${BASE_URL}/api/daily-records/all?days=${days}`, {
         method: "GET",
         headers: {
@@ -203,36 +417,23 @@ export const api = {
       });
 
       const data = await res.json();
-      showAlert("dev", JSON.stringify(data))
       if (!res.ok) {
-        return [];
+        return cached;
       }
-      console.log("data", data);
 
-      const raw = data.data;
-
-      const normalized = Array.isArray(raw)
-        ? raw.map((item: any) => ({
-          id: item.id.toString(),
-          date: item.createdAt, // ✅ normalize
-          ...item,
-        }))
-        : raw
-          ? [
-            {
-              id: raw.id.toString(),
-              date: raw.createdAt,
-              ...raw,
-            },
-          ]
+      const normalized = Array.isArray(data.data)
+        ? normalizeRecords(data.data)
+        : data.data
+          ? normalizeRecords([data.data])
           : [];
 
+      await saveCachedRecords(normalized);
       return normalized;
       // return data.data || [];
     } catch (error) {
       showAlert("dev error", JSON.stringify(error))
       console.log("getAllRecords error:", error);
-      return [];
+      return cached;
     }
   },
-}
+};
