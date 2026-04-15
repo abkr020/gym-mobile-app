@@ -66,7 +66,7 @@ const saveCachedRecords = async (records: any[]) => {
 };
 
 const createLocalId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-const isLocalId = (id: string) => id.startsWith("local-");
+const isLocalId = (id: any) => typeof id === 'string' && id.startsWith("local-");
 
 export const api = {
   wakeServer: async () => {
@@ -164,13 +164,13 @@ export const api = {
       console.log("data -", data);
 
       if (!res.ok || !data?.user) {
-        showAlert("Error", data?.message || "Login failed");
+        await showAlert("Error", data?.message || "Login failed");
         return null;
       }
-      showAlert("api data come", JSON.stringify(data));
+      await showAlert("api data come", JSON.stringify(data));
       return data;
     } catch (error) {
-      showAlert("Error", "Network error. Please try again.");
+      await showAlert("Error", "Network error. Please try again.");
       return null;
     }
   },
@@ -198,23 +198,23 @@ export const api = {
 
       // ✅ Check HTTP status first
       if (!res.ok || !data?.user) {
-        showAlert("Error", data?.message || "Signup failed");
+        await showAlert("Error", data?.message || "Signup failed");
         return null;
       }
 
       // ✅ Success case
-      showAlert("Success", "Account created successfully 🎉");
+      await showAlert("Success", "Account created successfully 🎉");
       return data;
     } catch (error) {
       // ✅ Network / unexpected error
-      showAlert("Error", "Network error. Please try again.");
+      await showAlert("Error", "Network error. Please try again.");
       return null;
     }
   },
 
   addDailyRecord: async (token: string | null, pushups?: number, pullups?: number) => {
     console.log("--addDailyRecord post req--");
-    showAlert("BASE_URL", BASE_URL || "undefined");
+    await showAlert("BASE_URL", BASE_URL || "undefined");
 
     const body: any = {};
     if (pushups !== undefined) body.pushups = pushups;
@@ -235,7 +235,7 @@ export const api = {
         await savePendingRecords([...existing, pendingRecord]);
         const cached = await loadCachedRecords();
         await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
-        showAlert("Offline", "Record saved locally and will sync once online.");
+        await showAlert("Offline", "Record saved locally and will sync once online.");
         return pendingRecord;
       }
 
@@ -254,7 +254,7 @@ export const api = {
         await savePendingRecords([...existing, pendingRecord]);
         const cached = await loadCachedRecords();
         await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
-        showAlert("Offline", data?.message || "Could not save to server, record stored locally.");
+        await showAlert("Offline", data?.message || "Could not save to server, record stored locally.");
         return pendingRecord;
       }
 
@@ -265,14 +265,14 @@ export const api = {
       };
       const cached = await loadCachedRecords();
       await saveCachedRecords([...cached, serverRecord]);
-      showAlert("Success", "Record saved successfully ✅");
+      await showAlert("Success", "Record saved successfully ✅");
       return serverRecord;
     } catch (error) {
       const existing = await loadPendingRecords();
       await savePendingRecords([...existing, pendingRecord]);
       const cached = await loadCachedRecords();
       await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
-      showAlert("Offline", "Network error. Record saved locally and will sync later.");
+      await showAlert("Offline", "Network error. Record saved locally and will sync later.");
       return pendingRecord;
     }
   },
@@ -282,7 +282,7 @@ export const api = {
       if (!(await isServerReachable())) {
         const cached = await loadCachedRecords();
         if (!cached.length) return null;
-        const latest = cached[cached.length - 1];
+        const latest = cached[0];
         return latest;
       }
 
@@ -309,6 +309,11 @@ export const api = {
   },
 
   updateDailyRecord: async (id: string, token: string | null, pushups?: number, pullups?: number) => {
+    if (!id) {
+      await showAlert("updateDailyRecord",id)
+      console.error("updateDailyRecord called with invalid id:", id);
+      return null;
+    }
     const body: any = {};
     if (pushups !== undefined) body.pushups = pushups;
     if (pullups !== undefined) body.pullups = pullups;
@@ -333,7 +338,7 @@ export const api = {
           record.id === id ? { ...record, ...body, date: new Date().toISOString() } : record
         );
         await saveCachedRecords(updatedCache);
-        showAlert("Offline", "Update saved locally and will sync once online.");
+        await showAlert(`Offline ${isLocalId(id)}`, `Update saved locally and will sync once online.`);
         return existingPending[createIndex];
       }
     }
@@ -352,11 +357,12 @@ export const api = {
         const existing = await loadPendingRecords();
         await savePendingRecords([...existing, pendingRecord]);
         const cached = await loadCachedRecords();
+        await showAlert("cached",JSON.stringify( cached))
         const updatedCache = cached.map((record: any) =>
           record.id === id ? { ...record, ...body } : record
         );
         await saveCachedRecords(updatedCache);
-        showAlert("Offline", "Update saved locally and will sync once online.");
+        await showAlert("Offline- save", "Update saved locally and will sync once online.");
         return pendingRecord;
       }
 
@@ -378,7 +384,7 @@ export const api = {
           record.id === id ? { ...record, ...body } : record
         );
         await saveCachedRecords(updatedCache);
-        showAlert("Offline", data?.message || "Could not update server, update stored locally.");
+        await showAlert("Offline", data?.message || "Could not update server, update stored locally.");
         return pendingRecord;
       }
 
@@ -387,7 +393,7 @@ export const api = {
         record.id === id ? { ...record, ...body } : record
       );
       await saveCachedRecords(updatedCache);
-      showAlert("Success", "Record updated successfully ✅");
+      await showAlert("Success", "Record updated successfully ✅");
       return data;
     } catch (error) {
       const existing = await loadPendingRecords();
@@ -397,7 +403,7 @@ export const api = {
         record.id === id ? { ...record, ...body } : record
       );
       await saveCachedRecords(updatedCache);
-      showAlert("Offline", "Network error. Update saved locally and will sync later.");
+      await showAlert("Offline", "Network error. Update saved locally and will sync later.");
       return pendingRecord;
     }
   },
@@ -405,6 +411,7 @@ export const api = {
   getAllRecords: async (token: string | null, days: number = 30) => {
     const cached = await loadCachedRecords();
     if (!(await isServerReachable())) {
+      await showAlert("dev",JSON.stringify(cached))
       return cached;
     }
 
@@ -431,7 +438,7 @@ export const api = {
       return normalized;
       // return data.data || [];
     } catch (error) {
-      showAlert("dev error", JSON.stringify(error))
+      await showAlert("dev error", JSON.stringify(error))
       console.log("getAllRecords error:", error);
       return cached;
     }

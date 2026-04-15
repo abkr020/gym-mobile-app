@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ThemeColors } from "../constants/colors";
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { api } from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 type Props = {
   visible: boolean;
@@ -39,7 +39,7 @@ export const DailyRecordForm = ({ visible, onClose }: Props) => {
         setPushups(record.pushups?.toString() || "");
         setPullups(record.pullups?.toString() || "");
         setIsEditing(true);
-        setRecordId(record.id);
+        setRecordId(record.id ? record.id.toString() : null);
       } else {
         setPushups("");
         setPullups("");
