@@ -448,6 +448,9 @@ console.log("id type",typeof(id) , typeof(record.id));
       return cached;
     }
 
+    // Sync pending records first
+    await api.syncPendingRecords(token);
+
     try {
       const res = await fetch(`${BASE_URL}/api/daily-records/all?days=${days}`, {
         method: "GET",
@@ -476,4 +479,9 @@ console.log("id type",typeof(id) , typeof(record.id));
       return cached;
     }
   },
+
+  // getPendingRecordsCount: async () => {
+  //   const pending = await loadPendingRecords();
+  //   return pending.length;
+  // },
 };
