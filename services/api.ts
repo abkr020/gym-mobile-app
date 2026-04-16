@@ -292,7 +292,7 @@ export const api = {
         if (!cached.length) return null;
         const today = new Date();
 
-        const todayRecord = cached.find((item) =>
+        const todayRecord = cached.find((item: any) =>
           isSameDay(new Date(item.createdAt), today)
         );
 
@@ -302,6 +302,9 @@ export const api = {
         // latest.createdAt === 
         return todayRecord || null;
       }
+
+      // Sync pending records first
+      await api.syncPendingRecords(token);
 
       const res = await fetch(`${BASE_URL}/api/daily-records/today`, {
         method: "GET",
