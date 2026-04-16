@@ -16,6 +16,13 @@ const BASE_URL = "http://192.168.1.14:3334";
 const PENDING_RECORDS_KEY = "pendingDailyRecords";
 const CACHED_RECORDS_KEY = "cachedDailyRecords";
 
+const isSameDay = (d1: Date, d2: Date): boolean => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 8000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
@@ -225,7 +232,7 @@ export const api = {
       localId: createLocalId(),
       date: new Date().toISOString(),
       action: "create",
-      body,
+      ...body,
       createdAt: new Date().toISOString(),
     };
 
@@ -234,7 +241,7 @@ export const api = {
         const existing = await loadPendingRecords();
         await savePendingRecords([...existing, pendingRecord]);
         const cached = await loadCachedRecords();
-        await saveCachedRecords([...cached, { id: pendingRecord.localId, date: pendingRecord.date, ...body }]);
+        await saveCachedRecords([...cached, { id: pendingRecord.localId, ...pendingRecord }]);
         await showAlert("Offline", "Record saved locally and will sync once online.");
         return pendingRecord;
       }
@@ -277,13 +284,23 @@ export const api = {
     }
   },
 
-  getLatestRecord: async (token: string | null) => {
+  getTodaysRecord: async (token: string | null) => {
     try {
       if (!(await isServerReachable())) {
         const cached = await loadCachedRecords();
+        // const cached: DailyRecord[] = await loadCachedRecords();
         if (!cached.length) return null;
-        const latest = cached[0];
-        return latest;
+        const today = new Date();
+
+        const todayRecord = cached.find((item) =>
+          isSameDay(new Date(item.createdAt), today)
+        );
+
+        // const latest = cached[0];
+        console.log("getTodaysRecord cached", cached);
+
+        // latest.createdAt === 
+        return todayRecord || null;
       }
 
       const res = await fetch(`${BASE_URL}/api/daily-records/today`, {
@@ -310,13 +327,14 @@ export const api = {
 
   updateDailyRecord: async (id: string, token: string | null, pushups?: number, pullups?: number) => {
     if (!id) {
-      await showAlert("updateDailyRecord",id)
+      await showAlert("updateDailyRecord", id)
       console.error("updateDailyRecord called with invalid id:", id);
       return null;
     }
     const body: any = {};
     if (pushups !== undefined) body.pushups = pushups;
     if (pullups !== undefined) body.pullups = pullups;
+    console.log("update body", body);
 
     if (isLocalId(id)) {
       const existingPending = await loadPendingRecords();
@@ -335,7 +353,7 @@ export const api = {
 
         const cached = await loadCachedRecords();
         const updatedCache = cached.map((record: any) =>
-          record.id === id ? { ...record, ...body, date: new Date().toISOString() } : record
+          record.id == id ? { ...record, ...body, date: new Date().toISOString() } : record
         );
         await saveCachedRecords(updatedCache);
         await showAlert(`Offline ${isLocalId(id)}`, `Update saved locally and will sync once online.`);
@@ -357,11 +375,23 @@ export const api = {
         const existing = await loadPendingRecords();
         await savePendingRecords([...existing, pendingRecord]);
         const cached = await loadCachedRecords();
-        await showAlert("cached",JSON.stringify( cached))
-        const updatedCache = cached.map((record: any) =>
-          record.id === id ? { ...record, ...body } : record
+        // const cached: DailyRecord[] = await loadCachedRecords();
+        await showAlert("cached before update", JSON.stringify(cached));
+        console.log("cached before update", cached);
+
+        const updatedCache = cached.map((record: any) =>{
+console.log("id type",typeof(id) , typeof(record.id));
+
+          return(
+
+            record.id == id ? { ...record, ...body } : record
+          )
+        }
         );
         await saveCachedRecords(updatedCache);
+        await showAlert("cached after update", JSON.stringify(updatedCache));
+        console.log("cached after update", cached);
+
         await showAlert("Offline- save", "Update saved locally and will sync once online.");
         return pendingRecord;
       }
@@ -381,7 +411,7 @@ export const api = {
         await savePendingRecords([...existing, pendingRecord]);
         const cached = await loadCachedRecords();
         const updatedCache = cached.map((record: any) =>
-          record.id === id ? { ...record, ...body } : record
+          record.id == id ? { ...record, ...body } : record
         );
         await saveCachedRecords(updatedCache);
         await showAlert("Offline", data?.message || "Could not update server, update stored locally.");
@@ -390,7 +420,7 @@ export const api = {
 
       const cached = await loadCachedRecords();
       const updatedCache = cached.map((record: any) =>
-        record.id === id ? { ...record, ...body } : record
+        record.id == id ? { ...record, ...body } : record
       );
       await saveCachedRecords(updatedCache);
       await showAlert("Success", "Record updated successfully ✅");
@@ -400,7 +430,7 @@ export const api = {
       await savePendingRecords([...existing, pendingRecord]);
       const cached = await loadCachedRecords();
       const updatedCache = cached.map((record: any) =>
-        record.id === id ? { ...record, ...body } : record
+        record.id == id ? { ...record, ...body } : record
       );
       await saveCachedRecords(updatedCache);
       await showAlert("Offline", "Network error. Update saved locally and will sync later.");
@@ -411,7 +441,7 @@ export const api = {
   getAllRecords: async (token: string | null, days: number = 30) => {
     const cached = await loadCachedRecords();
     if (!(await isServerReachable())) {
-      await showAlert("dev",JSON.stringify(cached))
+      // await showAlert("dev", JSON.stringify(cached))
       return cached;
     }
 

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Modal,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemeColors } from "../constants/colors";
 import { useAuth } from "../context/AuthContext";
@@ -33,7 +33,7 @@ export const DailyRecordForm = ({ visible, onClose }: Props) => {
     if (!visible) return;
 
     const fetchData = async () => {
-      const record = await api.getLatestRecord(token);
+      const record = await api.getTodaysRecord(token);
 
       if (record) {
         setPushups(record.pushups?.toString() || "");
@@ -114,6 +114,7 @@ export const DailyRecordForm = ({ visible, onClose }: Props) => {
             keyboardType="number-pad"
             value={pushups}
             onChangeText={setPushups}
+            selectTextOnFocus={true}
           />
 
           <TextInput
@@ -123,6 +124,7 @@ export const DailyRecordForm = ({ visible, onClose }: Props) => {
             keyboardType="number-pad"
             value={pullups}
             onChangeText={setPullups}
+            selectTextOnFocus={true}
           />
 
           <View style={styles.modalButtonContainer}>
