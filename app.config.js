@@ -4,10 +4,13 @@ export default {
     expo: {
         name: "gym-mobile-app",
         slug: "gym-mobile-app",
-        version: "1.0.1",
+        version: "1.0.5",
 
         android: {
             package: "com.abkr020.gymmobileapp",
+        },
+        ios: {
+            bundleIdentifier: "com.abkr020.gymmobileapp",
         },
 
         extra: {

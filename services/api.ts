@@ -11,8 +11,9 @@ import { showAlert } from "../components/DevAlert";
 
 // const BASE_SSO_AUTH_URL = Constants.expoConfig?.extra?.SSO_URL;
 const BASE_SSO_AUTH_URL = "https://sso-auth-backend.onrender.com";
+const BASE_URL = "https://gym-mobile-app-backend.onrender.com";
 // const BASE_URL = Constants.expoConfig?.extra?.BASE_URL;
-const BASE_URL = "http://192.168.1.14:3334";
+// const BASE_URL = "http://192.168.1.14:3334";
 const PENDING_RECORDS_KEY = "pendingDailyRecords";
 const CACHED_RECORDS_KEY = "cachedDailyRecords";
 

@@ -1,12 +1,12 @@
 import { DailyRecordForm } from "@/components/DailyRecordForm";
 import { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DailyRecordsChart } from "../../components/DailyRecordsChart";
